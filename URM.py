@@ -50,6 +50,9 @@ class RegisterProgram(object):
 
 	def concat(self, program):
 		assert self.isStandardForm()
+		return self.unprotectedConcat(program)
+
+	def unprotectedConcat(self, program):
 		p1 = self.data
 		p2 = program.data
 		p = p1[:len(p1)-1]
@@ -103,6 +106,24 @@ class RegisterProgram(object):
 		prg = prg.concat(fin_trans)
 		return prg
 
+
+
+def primRec(F, G, n):
+	m = max(n+2, F.roh(), G.roh())
+	commands = []
+	for i in range(1, n+2):
+		commands.append(['T', i, m+i])
+	commands.append('END')
+	H1 = concat(RegisterProgram(commands), F.trans(range(1, n+1), m+n+3))
+	q = len(H1.data)
+	H2 = G.trans(range(m+1, m+n+1) + range(m+n+2, m+n+4), m+n+3)
+	p = q + len(H2.data) + 2
+	H1.data.insert(len(H1.data)-1, ['J', m+n+2, m+n+1, p])
+	H = H1.unprotectedConcat(H2)
+	H.data.insert(len(H.data)-1, ['S', m+n+2])
+	H.data.insert(len(H.data)-1, ['J', 1, 1, q])
+	H.data.insert(len(H.data)-1, ['T', m+n+3, 1])
+	return H
 
 
 def compile(filePath):
