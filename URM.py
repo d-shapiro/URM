@@ -9,8 +9,9 @@ class RegisterMachine(object):
 		print self.data
 
 	def run(self, program):
+		commands = program.data
 		line = 0
-		command = program[line]
+		command = commands[line]
 		while command[0] != 'END':
 			if command[0] == 'Z':
 				self.set(command[1], 0)
@@ -22,7 +23,7 @@ class RegisterMachine(object):
 				if self.get(command[1]) == self.get(command[2]):
 					line = command[3] - 2
 			line += 1
-			command = program[line]
+			command = commands[line]
 
 	def get(self, index):
 		index -= 1
@@ -35,6 +36,61 @@ class RegisterMachine(object):
 		while index >= len(self.data):
 			self.data.append(0)
 		self.data[index] = value
+
+class RegisterProgram(object):
+
+	def __init__(self, commands):
+		self.data = commands
+
+	def isStandardForm(self):
+		for command in self.data:
+			if command[0] == 'J' and self.data[command[3] - 1][0] == 'END':
+				return False
+		return True
+
+	def concat(self, program):
+		assert self.isStandardForm()
+		p1 = self.data
+		p2 = program.data
+		p = p1[:len(p1)-1]
+		for cmd in p2:
+			if cmd[0] == 'J':
+				ncmd = cmd[:3]
+				ncmd.append(len(p1) - 1 + cmd[3])
+				p.append(ncmd)
+			else:
+				p.append(cmd)
+		return RegisterProgram(p)
+
+	def save(self, name):
+		program = self.data
+		filePath = name + '.urm'
+		f = open(filePath, 'w')
+		for cmd in program:
+			l = str(cmd[0])
+			for i in range(1, len(cmd)):
+				if i == 1:
+					l += '('
+				else:
+					l += ','
+				l += str(cmd[i])
+			if len(cmd) > 1:
+				l += ')'
+			l += '\n'
+			f.write(l)
+		f.close()
+		return filePath
+
+	def roh(self):
+		r = 0
+		for cmd in self.data:
+			if len(cmd) > 1 and cmd[1] > r:
+				r = cmd[1]
+			if len(cmd) > 2 and cmd[2] > r:
+				r = cmd[2]
+		return r + 1
+
+	#def trans(self, indices, fin_index):
 
 
 
@@ -51,24 +107,13 @@ def compile(filePath):
 				tokens[i] = int(tokens[i])
 		commands.append(tokens)
 	f.close()
-	return commands
+	return RegisterProgram(commands)
 
 def isStandardForm(program):
-	for command in program:
-		if command[0] == 'J' and program[command[3] - 1][0] == 'END':
-			return False
-	return True
+	return program.isStandardForm()
 
 def concat(p1, p2):
-	p = p1[:len(p1)-1]
-	for cmd in p2:
-		if cmd[0] == 'J':
-			ncmd = cmd[:3]
-			ncmd.append(len(p1) - 1 + cmd[3])
-			p.append(ncmd)
-		else:
-			p.append(cmd)
-	return p
+	return p1.concat(p2)
 
 def writeProgram(name):
 	filePath = name + ".urm"
@@ -83,19 +128,4 @@ def writeProgram(name):
 	return filePath
 
 def saveProgram(program, name):
-	filePath = name + '.urm'
-	f = open(filePath, 'w')
-	for cmd in program:
-		l = str(cmd[0])
-		for i in range(1, len(cmd)):
-			if i == 1:
-				l += '('
-			else:
-				l += ','
-			l += str(cmd[i])
-		if len(cmd) > 1:
-			l += ')'
-		l += '\n'
-		f.write(l)
-	f.close()
-	return filePath
+	return program.save(name)
