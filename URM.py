@@ -90,7 +90,18 @@ class RegisterProgram(object):
 				r = cmd[2]
 		return r + 1
 
-	#def trans(self, indices, fin_index):
+	def trans(self, indices, fin_index):
+		p = []
+		for i in range(0, len(indices)):
+			p.append(['T', indices[i], i + 1])
+		for i in range(len(indices) + 1, self.roh() + 1):
+			p.append(['Z', i])
+		p.append(['END'])
+		prg = RegisterProgram(p)
+		prg = prg.concat(self)
+		fin_trans = RegisterProgram([['T', 1, fin_index], ['END']])
+		prg = prg.concat(fin_trans)
+		return prg
 
 
 
